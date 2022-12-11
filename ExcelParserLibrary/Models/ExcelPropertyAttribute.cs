@@ -4,24 +4,36 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ExcelParserLibrary.Models
+namespace ExcelParserLibrary.Models;
+
+/// <summary>
+/// Excel file property name.
+/// <para/>
+/// Renames the property to match a property in the Excel file.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+public sealed class ExcelPropertyAttribute : Attribute
 {
-   [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-   public sealed class ExcelPropertyAttribute : Attribute
+   private readonly string _propString;
+
+   /// <summary>
+   /// Excel file property name.
+   /// <para/>
+   /// Renames the property to match a property in the Excel file.
+   /// </summary>
+   /// <param name="propertyString">Name of the property</param>
+   public ExcelPropertyAttribute(string propertyString)
    {
-      private readonly string _propString;
-
-      // This is a positional argument
-      public ExcelPropertyAttribute(string propertyString)
-      {
-         _propString = propertyString;
-      }
-
-      public bool CompareProperty(string prop, bool ignoreCase) =>
-         ignoreCase ? prop.ToLower() == _propString.ToLower() : prop == _propString;
-
-      public override string ToString() => $"ExcelProperty {PropertyString}";
-
-      public string PropertyString => _propString;
+      _propString = propertyString;
    }
+
+   /// <summary>
+   /// Only used for debugging.
+   /// </summary>
+   public override string ToString() => $"ExcelProperty {PropertyString}";
+
+   /// <summary>
+   /// Assigned property name
+   /// </summary>
+   public string PropertyString => _propString;
 }

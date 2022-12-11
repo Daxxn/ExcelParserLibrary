@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ExcelParserLibrary.Models;
 
-internal class PropertyMap
+internal class PropertyMap : IEnumerable<KeyValuePair<int, ExcelProp>>
 {
    #region Local Props
    public ExcelProp this[int index] => Map[index];
@@ -27,6 +28,8 @@ internal class PropertyMap
    public bool ContainsKey(int index) => Map.ContainsKey(index);
    public void AddProp(int index, PropertyInfo info, string name) => Map[index] = new(info, name);
    public ExcelProp? GetProp(int index) => Map.TryGetValue(index, out var prop) ? prop : null;
+   public IEnumerator<KeyValuePair<int, ExcelProp>> GetEnumerator() => Map.GetEnumerator();
+   IEnumerator IEnumerable.GetEnumerator() => Map.GetEnumerator();
    #endregion
 
    #region Full Props

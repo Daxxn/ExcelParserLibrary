@@ -4,6 +4,11 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <RepositoryUrl>https://github.com/Daxxn/ExcelParserLibrary.git</RepositoryUrl>
+    <Description>A wrapper library for parsing Excel files.</Description>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="EPPlus" Version="6.1.1" />
+    <PackageReference Include="NPOI" Version="2.6.0" />
   </ItemGroup>
 
 </Project>

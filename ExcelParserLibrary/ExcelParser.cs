@@ -9,70 +9,119 @@ using System.Threading.Tasks;
 using ExcelParserLibrary.Models;
 using ExcelParserLibrary.Models.Exceptions;
 
-using OfficeOpenXml;
+using NPOI.HSSF.UserModel;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 
 namespace ExcelParserLibrary;
 
-public class ExcelParser
+/// <inheritdoc/>
+public class ExcelParser : IExcelParser
 {
    #region Local Props
+   /// <inheritdoc/>
    private ExcelParserOptions _options = new();
    #endregion
 
-   #region Constructors
-   public ExcelParser() => ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-   #endregion
-
    #region Methods
-
    #region Extended Methods
+   #region Async Methods
+   /// <inheritdoc/>
+   public async Task<ExcelResult<T>> ParseFileAsync<T>(string filePath, ExcelParserOptions options) where T : class, new()
+   {
+      _options = options;
+      return await Task.Run(() =>
+      {
+         using FileStream stream = new(filePath, FileMode.Open);
+         using IWorkbook package = Path.GetExtension(filePath) == ".xls" ? new HSSFWorkbook(stream) : new XSSFWorkbook(stream);
+         return ParseFile<T>(package);
+      });
+   }
+   /// <inheritdoc/>
+   public async Task<ExcelResult<T>> ParseFileAsync<T>(string filePath) where T : class, new()
+   {
+      return await Task.Run(() =>
+      {
+         using FileStream stream = new(filePath, FileMode.Open);
+         using IWorkbook package = Path.GetExtension(filePath) == ".xls" ? new HSSFWorkbook(stream) : new XSSFWorkbook(stream);
+         return ParseFile<T>(package);
+      });
+   }
+   /// <inheritdoc/>
+   public async Task<ExcelResult<T>> ParseFileAsync<T>(Stream stream, ExcelParserOptions options) where T : class, new()
+   {
+      _options = options;
+      return await Task.Run(() =>
+      {
+         using HSSFWorkbook package = new(stream);
+         return ParseFile<T>(package);
+      });
+   }
+   /// <inheritdoc/>
+   public async Task<ExcelResult<T>> ParseFileAsync<T>(Stream stream) where T : class, new()
+   {
+      return await Task.Run(() =>
+      {
+         using HSSFWorkbook package = new(stream);
+         return ParseFile<T>(package);
+      });
+   }
+   #endregion
+   /// <inheritdoc/>
    public ExcelResult<T> ParseFile<T>(string filePath, ExcelParserOptions options) where T : class, new()
    {
       _options = options;
-      using ExcelPackage package = new(filePath);
+      using FileStream stream = new(filePath, FileMode.Open);
+      using IWorkbook package = Path.GetExtension(filePath) == ".xls" ? new HSSFWorkbook(stream) : new XSSFWorkbook(stream);
       return ParseFile<T>(package);
    }
+   /// <inheritdoc/>
    public ExcelResult<T> ParseFile<T>(string filePath) where T : class, new()
    {
-      var fileInfo = new FileInfo(filePath);
-      using ExcelPackage package = new(fileInfo);
+      using FileStream stream = new(filePath, FileMode.Open);
+      using IWorkbook package = Path.GetExtension(filePath) == ".xls" ? new HSSFWorkbook(stream) : new XSSFWorkbook(stream);
       return ParseFile<T>(package);
    }
+   /// <inheritdoc/>
    public ExcelResult<T> ParseFile<T>(Stream stream, ExcelParserOptions options) where T : class, new()
    {
       _options = options;
-      using ExcelPackage package = new(stream);
+      using HSSFWorkbook package = new(stream);
       return ParseFile<T>(package);
    }
+   /// <inheritdoc/>
    public ExcelResult<T> ParseFile<T>(Stream stream) where T : class, new()
    {
-      using ExcelPackage package = new(stream);
+      using HSSFWorkbook package = new(stream);
       return ParseFile<T>(package);
    }
    #endregion
 
-   private ExcelResult<T> ParseFile<T>(ExcelPackage package) where T : class, new()
+   private ExcelResult<T> ParseFile<T>(IWorkbook package) where T : class, new()
    {
       List<T> data = new();
       List<Exception> errors = new();
-      var sheet = package.Workbook.Worksheets.First();
+      var sheet = package.GetSheetAt(0);
       var map = GetPropMap<T>(sheet);
 
-      for (int r = _options.DataStartRow; r < _options.MaxLength; r++)
+      for (int r = _options.DataStartRow; r < sheet.LastRowNum; r++)
       {
          try
          {
+            var rowData = sheet.GetRow(r).Cells;
             T newObject = new();
-            for (int c = 0; c < map.MaxSize; c++)
+            foreach (var kv in map)
             {
-               if (sheet.Cells[r, c].Value is not null)
+               if (rowData[kv.Key].CellType != CellType.Unknown)
                {
-                  if (map.ContainsKey(r))
+                  if (_options.ExclusionFunctions != null)
                   {
-                     if (!SetProperty(sheet.Cells[r, c].Value, map[c].Prop, newObject))
-                     {
-                        throw new ExcelPropertyException(c, map[c].Name, sheet.Cells[r, c].Value.GetType());
-                     }
+                     if (_options.ExclusionFunctions.Any(func => func(rowData.Select(cell => cell.StringCellValue).ToArray())))
+                        break;
+                  }
+                  if (!SetProperty(rowData[kv.Key].StringCellValue, kv.Value.Prop, newObject))
+                  {
+                     throw new ExcelPropertyException(kv.Key, kv.Value.Name, rowData[kv.Key].GetType());
                   }
                }
             }
@@ -93,7 +142,13 @@ public class ExcelParser
    }
 
    #region Util Methods
-   private PropertyMap GetPropMap<T>(ExcelWorksheet sheet) where T : class, new()
+   /// <summary>
+   /// Builds the property map based on the <see cref="ExcelPropertyAttribute"/> assigned in <typeparamref name="T"/>.
+   /// </summary>
+   /// <typeparam name="T">Model to base parsing on</typeparam>
+   /// <param name="sheet"><see cref="ISheet"/> from the Excel file.</param>
+   /// <returns>A map of matching properties.</returns>
+   private PropertyMap GetPropMap<T>(ISheet sheet) where T : class, new()
    {
       (var names, var maxPropCount) = GetHeaderNames(sheet);
       var map = new PropertyMap(maxPropCount);
@@ -107,11 +162,26 @@ public class ExcelParser
             var excelProp = prop.GetCustomAttribute<ExcelPropertyAttribute>();
             propName = excelProp is null ? prop.Name : excelProp.PropertyString;
 
-            for (int i = 1; i < names.Length; i++)
+            if (_options.IgnoreCase)
             {
-               if (names[i] == propName)
+               for (int i = 0; i < names.Length; i++)
                {
-                  map.AddProp(i, prop, propName);
+                  if (names[i].ToLower() == propName.ToLower())
+                  {
+                     map.AddProp(i, prop, propName);
+                     break;
+                  }
+               }
+            }
+            else
+            {
+               for (int i = 0; i < names.Length; i++)
+               {
+                  if (names[i] == propName)
+                  {
+                     map.AddProp(i, prop, propName);
+                     break;
+                  }
                }
             }
          }
@@ -119,32 +189,84 @@ public class ExcelParser
       return map;
    }
 
-   private (string[] names, int maxLength) GetHeaderNames(ExcelWorksheet sheet)
+   private (string[] names, int maxLength) GetHeaderNames(ISheet sheet)
    {
-      List<string> names = new()
+      List<string> names = new();
+      var rowCells = sheet.GetRow(_options.HeaderRow).Cells;
+      foreach (var cell in rowCells)
       {
-         ""
-      };
-      for (int i = 1; i < sheet.Rows[_options.HeaderRow].Count(); i++)
-      {
-         if (sheet.Cells[_options.HeaderRow, i].Value is string str)
-         {
-            names.Add(str);
-         }
-         else
-         {
-            return (names.ToArray(), i);
-         }
+         names.Add(cell.StringCellValue);
       }
-      throw new Exception("Unable to find column names.");
+      return (names.ToArray(), rowCells.Count);
    }
 
-   private bool SetProperty(object data, PropertyInfo prop, object obj)
+   private static bool SetProperty(string data, PropertyInfo prop, object obj)
    {
-      if (prop.PropertyType == data.GetType())
+      if (prop.PropertyType == typeof(string))
       {
          prop.SetValue(obj, data);
          return true;
+      }
+      else if (prop.PropertyType == typeof(int))
+      {
+         if (int.TryParse(data, out int intNum))
+         {
+            prop.SetValue(obj, intNum);
+            return true;
+         }
+      }
+      else if (prop.PropertyType == typeof(uint))
+      {
+         if (uint.TryParse(data, out uint uintNum))
+         {
+            prop.SetValue(obj, uintNum);
+            return true;
+         }
+      }
+      else if (prop.PropertyType == typeof(double))
+      {
+         if (double.TryParse(data, out double doubleNum))
+         {
+            prop.SetValue(obj, doubleNum);
+            return true;
+         }
+      }
+      else if (prop.PropertyType == typeof(decimal))
+      {
+         if (string.IsNullOrEmpty(data))
+         {
+            return false;
+         }
+         if (char.IsSymbol(data[0]))
+         {
+            if (decimal.TryParse(data.Remove(0, 1), out decimal currencyNum))
+            {
+               prop.SetValue(obj, currencyNum);
+               return true;
+            }
+         }
+         if (decimal.TryParse(data, out decimal decimalNum))
+         {
+            prop.SetValue(obj, decimalNum);
+            return true;
+         }
+      }
+      else if (prop.PropertyType.IsEnum)
+      {
+         if (int.TryParse(data, out int enumInt))
+         {
+            var enumCast = Convert.ChangeType(data, prop.PropertyType);
+            if (enumCast != null)
+            {
+               prop.SetValue(obj, enumCast);
+               return true;
+            }
+         }
+         if (Enum.TryParse(prop.PropertyType, data, out object? enumObj))
+         {
+            prop.SetValue(obj, enumObj);
+            return true;
+         }
       }
       return false;
    }

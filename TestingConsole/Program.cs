@@ -1,4 +1,5 @@
 ﻿using ExcelParserLibrary;
+using ExcelParserLibrary.Test;
 
 using TestingConsole.Model;
 
@@ -12,6 +13,9 @@ internal class Program
 
       string path = @"F:\Electrical\PartInvoices\Mouser\260150809.xls";
       Console.WriteLine($"Parsing {Path.GetFileName(path)} File.");
+
+      //NPOIParser.OpenFile(path);
+
       ExcelParser parser = new();
       var results = parser.ParseFile<MouserPartModel>(path);
 
