@@ -30,7 +30,7 @@ public class ExcelParserOptions
    ///   </item>
    /// </list>
    /// </summary>
-   public bool IgnorePropertyErrors { get; set; } = true;
+   public bool IgnorePropertyErrors { get; set; } = false;
    /// <summary>
    /// Row index of the property header.
    /// </summary>

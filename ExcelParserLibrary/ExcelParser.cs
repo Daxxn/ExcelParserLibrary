@@ -23,6 +23,20 @@ public class ExcelParser : IExcelParser
    private ExcelParserOptions _options = new();
    #endregion
 
+   #region Constructors
+   /// <summary>
+   /// Default constructor
+   /// </summary>
+   public ExcelParser() { }
+   /// <summary>
+   /// Normal constructor.
+   /// <para/>
+   /// As in, not used with dependency injection.
+   /// </summary>
+   /// <param name="options">Extra options to use for parsing.</param>
+   public ExcelParser(ExcelParserOptions options) => _options = options;
+   #endregion
+
    #region Methods
    #region Extended Methods
    #region Async Methods
