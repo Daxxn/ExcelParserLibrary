@@ -15,9 +15,9 @@ Add attributes to any needed properties.
 using ExcelParserLibrary.Models;
 
 /// <summary>
-/// Desired model to parse
+/// Desired model to parse for each line.
 /// </summary>
-public class Model
+public class SomeModel
 {
    [ExcelProperty("Prop Name")]
    public string NameThatDoesntMatchFile { get; set; }
@@ -49,16 +49,19 @@ SomeService.cs
 ```cs
 using ExcelParserLibrary;
 
+/// <summary>
+/// Service that uses the parser.
+/// </summary>
 public class SomeService
 {
    private readonly IAbstractFactory<IExcelParser> _parserFactory;
 
    public SomeService(IAbstractFactory<IExcelParser> parserFactory) => _parserFactory = parserFactory;
 
-   public Model ParseFile(string path)
+   public SomeModel ParseFile(string path)
    {
       var parser = _parserFactory.Create();
-      var result = parser.ParseFile<Model>(path);
+      var result = parser.ParseFile<SomeModel>(path);
       if (result.errors != null)
       {
          // Handle any line errors found during parsing.
@@ -66,7 +69,7 @@ public class SomeService
       return result.Data;
    }
 
-   public Model ParseFileWithOptions(string path)
+   public SomeModel ParseFileWithOptions(string path)
    {
       var parser = _parserFactory.Create();
       var options = new ExcelParserOptions()
@@ -74,7 +77,7 @@ public class SomeService
          IgnoreCase = true,
          IgnorePropertyErrors = true,
       };
-      var result = parser.ParseFile<Model>(path, options);
+      var result = parser.ParseFile<SomeModel>(path, options);
       if (result.errors != null)
       {
          // Handle any line errors found during parsing.
@@ -102,7 +105,7 @@ var options = new ExcelParserOptions
 }
 try
 {
-   var result = new ExcelParser(options).ParseFile("path/to/file.xlsx");
+   var result = new ExcelParser(options).ParseFile<SomeModel>("path/to/file.xlsx");
    var data = result.Data;
    // Do whatever with data...
 }
