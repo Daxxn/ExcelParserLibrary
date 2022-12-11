@@ -1,13 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
    <PropertyGroup>
       <TargetFramework>net6.0</TargetFramework>
       <ImplicitUsings>enable</ImplicitUsings>
-      <VersionPrefix>1.0.1</VersionPrefix>
+      <VersionPrefix>1.0.2</VersionPrefix>
       <Nullable>enable</Nullable>
       <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-      <RepositoryUrl>https://github.com/Daxxn/ExcelParserLibrary.git</RepositoryUrl>
+      <Title>Excel Parser Library</Title>
+      <Authors>Daxxn</Authors>
+      <Company>Daxxn Industries</Company>
       <Description>A wrapper library for parsing data from Excel files.</Description>
+      <RepositoryUrl>https://github.com/Daxxn/ExcelParserLibrary.git</RepositoryUrl>
       <GenerateDocumentationFile>True</GenerateDocumentationFile>
       <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
    </PropertyGroup>
