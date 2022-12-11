@@ -10,10 +10,14 @@ internal class Program
    {
       Console.WriteLine("Excel Parser Testing Console");
 
-      string path = @"F:\Electrical\PartInvoices\Mouser\260150809.xls";
+      Console.WriteLine("Enter file path:");
+      string? path = Console.ReadLine();
+      if (path == null)
+      {
+         Console.WriteLine("No path provided...");
+         return;
+      }
       Console.WriteLine($"Parsing {Path.GetFileName(path)} File.");
-
-      //NPOIParser.OpenFile(path);
 
       ExcelParser parser = new();
       var results = parser.ParseFile<MouserPartModel>(path);

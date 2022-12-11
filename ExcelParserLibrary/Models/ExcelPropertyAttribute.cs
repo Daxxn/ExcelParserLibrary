@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ExcelParserLibrary.Models;
+﻿namespace ExcelParserLibrary.Models;
 
 /// <summary>
 /// Excel file property name.
@@ -22,10 +16,7 @@ public sealed class ExcelPropertyAttribute : Attribute
    /// Renames the property to match a property in the Excel file.
    /// </summary>
    /// <param name="propertyString">Name of the property</param>
-   public ExcelPropertyAttribute(string propertyString)
-   {
-      _propString = propertyString;
-   }
+   public ExcelPropertyAttribute(string propertyString) => _propString = propertyString;
 
    /// <summary>
    /// Only used for debugging.
