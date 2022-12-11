@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace ExcelParserLibrary.Models;
 
-namespace ExcelParserLibrary.Models;
-
+/// <summary>
+/// Results from Excel file parse. Including data and any errors.
+/// </summary>
+/// <typeparam name="T">The model representing one line in the file.</typeparam>
 public class ExcelResult<T>
 {
    /// <summary>
@@ -17,7 +15,9 @@ public class ExcelResult<T>
    /// </summary>
    public IEnumerable<Exception>? Errors { get; init; }
 
+   /// <inheritdoc/>
    public ExcelResult(IEnumerable<T> data) => Data = data;
+   /// <inheritdoc/>
    public ExcelResult(IEnumerable<T> data, IEnumerable<Exception>? errors)
    {
       Data = data;
