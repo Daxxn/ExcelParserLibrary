@@ -8,7 +8,7 @@ namespace ExcelParserLibrary.Models;
 public class ExcelParserOptions
 {
    /// <summary>
-   /// Ignores letter casing.
+   /// Ignores property case.
    /// </summary>
    public bool IgnoreCase { get; set; } = false;
    /// <summary>
@@ -27,10 +27,14 @@ public class ExcelParserOptions
    public bool IgnorePropertyErrors { get; set; } = false;
    /// <summary>
    /// Row index of the property header.
+   /// <para/>
+   /// Default = 0
    /// </summary>
    public int HeaderRow { get; set; } = 0;
    /// <summary>
    /// Row start index of the data.
+   /// <para/>
+   /// Default = 1
    /// </summary>
    public int DataStartRow { get; set; } = 1;
    /// <summary>

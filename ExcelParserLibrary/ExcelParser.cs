@@ -112,7 +112,7 @@ public class ExcelParser : IExcelParser
       var sheet = package.GetSheetAt(0);
       var map = GetPropMap<T>(sheet);
 
-      for (int r = _options.DataStartRow; r < sheet.LastRowNum; r++)
+      for (int r = _options.DataStartRow; r < sheet.PhysicalNumberOfRows; r++)
       {
          try
          {
@@ -233,6 +233,14 @@ public class ExcelParser : IExcelParser
       }
       else if (prop.PropertyType == typeof(double))
       {
+         if (char.IsSymbol(data[0]))
+         {
+            if (double.TryParse(data.Remove(0, 1), out double currencyNum))
+            {
+               prop.SetValue(obj, currencyNum);
+               return true;
+            }
+         }
          if (double.TryParse(data, out double doubleNum))
          {
             prop.SetValue(obj, doubleNum);
@@ -261,19 +269,36 @@ public class ExcelParser : IExcelParser
       }
       else if (prop.PropertyType.IsEnum)
       {
-         if (int.TryParse(data, out int enumInt))
-         {
-            var enumCast = Convert.ChangeType(data, prop.PropertyType);
-            if (enumCast != null)
-            {
-               prop.SetValue(obj, enumCast);
-               return true;
-            }
-         }
          if (Enum.TryParse(prop.PropertyType, data, out object? enumObj))
          {
             prop.SetValue(obj, enumObj);
             return true;
+         }
+      }
+      else if (prop.PropertyType.IsClass)
+      {
+         ConstructorInfo? constructor = prop.PropertyType.GetConstructor(new Type[1] { typeof(string) });
+         if (constructor != null)
+         {
+            object[] parameters = new string[1] { data };
+            prop.SetValue(obj, constructor.Invoke(parameters));
+            return true;
+         }
+      }
+      else
+      {
+         try
+         {
+            var cast = Convert.ChangeType(data, prop.PropertyType);
+            if (cast != null)
+            {
+               prop.SetValue(obj, cast);
+               return true;
+            }
+         }
+         catch (Exception)
+         {
+            return false;
          }
       }
       return false;
